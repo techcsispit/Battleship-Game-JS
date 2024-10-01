@@ -11,7 +11,7 @@ This is a **Battleship Game** built using **HTML, CSS, and JavaScript**. It simu
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone [repository-link]
+   git clone https://github.com/techcsispit/Battleship-Game-JS
    ```
 2. Navigate to the project folder.
 3. Open the `index.html` file in your browser.
@@ -21,12 +21,17 @@ This is a **Battleship Game** built using **HTML, CSS, and JavaScript**. It simu
 - Responsive design for various screen sizes.
 - Scoring system.
 
+## Contributing 
+We welcome contributions to the project. Please feel free to submit bug fixes, improvements, and features via pull requests.
+
+   1. Creating an Issue: Before making any changes, create an issue explaining what you'd like to add or change and why
+   2. Fork the repository.
+   3. Create a new branch for your feature or bug fix.
+   4. Commit your changes and push the branch.
+   5. Submit a pull request.
+
 ## Raising an Issue
 If you encounter any bugs or have feature requests, please create an issue on the repository. Provide detailed information to help us understand and address the problem.
-
-## License
-This project is licensed under the **MIT License**.
-
 
 ### MIT Licence
 
