@@ -1,5 +1,32 @@
-# battleships-game
-javaScript HTML and CSS 
+# Battleship Game
+
+## About
+This is a **Battleship Game** built using **HTML, CSS, and JavaScript**. It simulates the classic battleship experience where players take turns guessing the location of their opponent’s ships.
+
+## Requirements
+- HTML
+- CSS
+- JavaScript
+
+## Installation
+1. Clone the repository:
+   ```bash
+   git clone [repository-link]
+   ```
+2. Navigate to the project folder.
+3. Open the `index.html` file in your browser.
+
+## Features To Be Added
+- Sound effects for hits and misses.
+- Responsive design for various screen sizes.
+- Scoring system.
+
+## Raising an Issue
+If you encounter any bugs or have feature requests, please create an issue on the repository. Provide detailed information to help us understand and address the problem.
+
+## License
+This project is licensed under the **MIT License**.
+
 
 ### MIT Licence
 
@@ -15,7 +42,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software. 
 
-*Translation: Ofcourse you can use this for you project! Just make sure to say where you got this from :)
+*Translation: Of course you can use this for you project! Just make sure to say where you got this from :)
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
