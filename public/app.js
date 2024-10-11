@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startMultiPlayer()
   }
 
+
   // Multiplayer
   function startMultiPlayer() {
     const socket = io();
@@ -126,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Ready button click
     startButton.addEventListener('click', () => {
+      
       if(allShipsPlaced) playGameMulti(socket)
       else infoDisplay.innerHTML = "Please place all ships"
     })
@@ -170,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generate(shipArray[4])
 
     startButton.addEventListener('click', () => {
-      setupButtons.style.display = 'none'
+     
       playGameSingle()
     })
   }
@@ -335,12 +337,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Game Logic for Single Player
   function playGameSingle() {
-    if (isGameOver) return
+    if (isGameOver) return;
+      // Check if ships are placed
+  if (!allShipsPlaced) {
+    turnDisplay.innerHTML = 'Place all your ships first!';
+    return; // Exit the function if ships are not placed
+  }
+   setupButtons.style.display = 'none'
     if (currentPlayer === 'user') {
       turnDisplay.innerHTML = 'Your Go'
       computerSquares.forEach(square => square.addEventListener('click', function(e) {
         shotFired = square.dataset.id
         revealSquare(square.classList)
+        
       }))
     }
     if (currentPlayer === 'enemy') {
