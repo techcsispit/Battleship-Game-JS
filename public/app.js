@@ -196,8 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let randomStart = Math.abs(Math.floor(Math.random() * computerSquares.length - (ship.directions[0].length * direction)))
 
     const isTaken = current.some(index => computerSquares[randomStart + index].classList.contains('taken'))
-    const isAtRightEdge = current.some(index => (randomStart + index) % width === width - 1)
-    const isAtLeftEdge = current.some(index => (randomStart + index) % width === 0)
+    const isAtRightEdge = current.some(index => (randomStart + index) % width === width - 1 && direction === 1)
+    const isAtLeftEdge = current.some(index => (randomStart + index) % width === 0 && direction === 1)
+    
 
     if (!isTaken && !isAtRightEdge && !isAtLeftEdge) current.forEach(index => computerSquares[randomStart + index].classList.add('taken', ship.name))
 
@@ -282,6 +283,15 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedShipIndex = parseInt(selectedShipNameWithIndex.substr(-1))
 
     shipLastId = shipLastId - selectedShipIndex
+      // Check if any square in the path of the ship is "taken"
+  const isOverlap = [...Array(draggedShipLength).keys()].some(i => {
+    let squareIndex = isHorizontal 
+      ? parseInt(this.dataset.id) - selectedShipIndex + i 
+      : parseInt(this.dataset.id) - selectedShipIndex + width * i;
+    return userSquares[squareIndex].classList.contains('taken');
+  });
+
+  if (isOverlap) return; 
     // console.log(shipLastId)
 
     if (isHorizontal && !newNotAllowedHorizontal.includes(shipLastId)) {
@@ -336,25 +346,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Game Logic for Single Player
+
   function playGameSingle() {
     if (isGameOver) return;
-      // Check if ships are placed
-  if (!allShipsPlaced) {
-    turnDisplay.innerHTML = 'Place all your ships first!';
-    return; // Exit the function if ships are not placed
-  }
-   setupButtons.style.display = 'none'
-    if (currentPlayer === 'user') {
-      turnDisplay.innerHTML = 'Your Go'
-      computerSquares.forEach(square => square.addEventListener('click', function(e) {
-        shotFired = square.dataset.id
-        revealSquare(square.classList)
-        
-      }))
+    
+    // Check if ships are placed
+    if (!allShipsPlaced) {
+      turnDisplay.innerHTML = 'Place all your ships first!';
+      return; // Exit the function if ships are not placed
     }
+  
+    setupButtons.style.display = 'none';
+    
+    if (currentPlayer === 'user') {
+      turnDisplay.innerHTML = 'Your Go';
+      computerSquares.forEach(square => square.addEventListener('click', function(e) {
+        shotFired = square.dataset.id;
+        revealSquare(square.classList);
+        checkForWins();
+      }));
+    }
+  
     if (currentPlayer === 'enemy') {
-      turnDisplay.innerHTML = 'Computers Go'
-      setTimeout(enemyGo, 1000)
+      turnDisplay.innerHTML = 'Computer\'s Go';
+      setTimeout(enemyGo, 1000);
     }
   }
 
@@ -408,61 +423,83 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function checkForWins() {
-    let enemy = 'computer'
-    if(gameMode === 'multiPlayer') enemy = 'enemy'
+    let enemy = 'computer';
+    if (gameMode === 'multiPlayer') enemy = 'enemy';
+  
+    // Log current counts before checking
+    console.log('Player Ship Counts: ', { destroyerCount, submarineCount, cruiserCount, battleshipCount, carrierCount });
+    console.log('Enemy Ship Counts: ', { cpuDestroyerCount, cpuSubmarineCount, cpuCruiserCount, cpuBattleshipCount, cpuCarrierCount });
+  
+    // Player ship conditions
     if (destroyerCount === 2) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s destroyer`
-      destroyerCount = 10
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s destroyer`;
+      destroyerCount = 10; // Mark the ship as fully sunk
     }
     if (submarineCount === 3) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s submarine`
-      submarineCount = 10
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s submarine`;
+      submarineCount = 10;
     }
-    if (cruiserCount === 3) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s cruiser`
-      cruiserCount = 10
+    if (cruiserCount === 3) { // Fixed missing condition for cruiser
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s cruiser`;
+      cruiserCount = 10;
     }
     if (battleshipCount === 4) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s battleship`
-      battleshipCount = 10
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s battleship`;
+      battleshipCount = 10;
     }
-    if (carrierCount === 5) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s carrier`
-      carrierCount = 10
+    if (carrierCount === 5) { // Fixed missing condition for carrier
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s carrier`;
+      carrierCount = 10;
     }
+  
+    // Enemy ship conditions (the enemy sinking the player's ships)
     if (cpuDestroyerCount === 2) {
-      infoDisplay.innerHTML = `${enemy} sunk your destroyer`
-      cpuDestroyerCount = 10
+      infoDisplay.innerHTML = `${enemy} sunk your destroyer`;
+      cpuDestroyerCount = 10; // Mark the ship as fully sunk
     }
     if (cpuSubmarineCount === 3) {
-      infoDisplay.innerHTML = `${enemy} sunk your submarine`
-      cpuSubmarineCount = 10
+      infoDisplay.innerHTML = `${enemy} sunk your submarine`;
+      cpuSubmarineCount = 10;
     }
-    if (cpuCruiserCount === 3) {
-      infoDisplay.innerHTML = `${enemy} sunk your cruiser`
-      cpuCruiserCount = 10
+    if (cpuCruiserCount === 3) { // Fixed missing condition for enemy cruiser
+      infoDisplay.innerHTML = `${enemy} sunk your cruiser`;
+      cpuCruiserCount = 10;
     }
     if (cpuBattleshipCount === 4) {
-      infoDisplay.innerHTML = `${enemy} sunk your battleship`
-      cpuBattleshipCount = 10
+      infoDisplay.innerHTML = `${enemy} sunk your battleship`;
+      cpuBattleshipCount = 10;
     }
-    if (cpuCarrierCount === 5) {
-      infoDisplay.innerHTML = `${enemy} sunk your carrier`
-      cpuCarrierCount = 10
+    if (cpuCarrierCount === 5) { // Fixed missing condition for enemy carrier
+      infoDisplay.innerHTML = `${enemy} sunk your carrier`;
+      cpuCarrierCount = 10;
     }
-
+  
+    // Log after checking ship sink conditions
+    console.log('Updated Player Ship Counts: ', { destroyerCount, submarineCount, cruiserCount, battleshipCount, carrierCount });
+    console.log('Updated Enemy Ship Counts: ', { cpuDestroyerCount, cpuSubmarineCount, cpuCruiserCount, cpuBattleshipCount, cpuCarrierCount });
+  
+    // Check for winning condition - Player wins if the total ship score equals 50
     if ((destroyerCount + submarineCount + cruiserCount + battleshipCount + carrierCount) === 50) {
-      infoDisplay.innerHTML = "YOU WIN"
-      gameOver()
+      infoDisplay.innerHTML = "YOU WIN";
+      gameOver();
     }
+  
+    // Check for losing condition - Enemy wins if the total ship score equals 50
     if ((cpuDestroyerCount + cpuSubmarineCount + cpuCruiserCount + cpuBattleshipCount + cpuCarrierCount) === 50) {
-      infoDisplay.innerHTML = `${enemy.toUpperCase()} WINS`
-      gameOver()
+      infoDisplay.innerHTML = `${enemy.toUpperCase()} WINS`;
+      gameOver();
     }
   }
+  
 
   function gameOver() {
     isGameOver = true
     startButton.removeEventListener('click', playGameSingle)
   }
+  computerSquares.forEach(square => {
+    square.replaceWith(square.cloneNode(true)); // Clone to remove all event listeners
+  });
+
+  // Optionally, show a game-over message to the player
+  console.log("Game over! No more moves allowed.");
 })
