@@ -66,6 +66,20 @@ document.addEventListener('DOMContentLoaded', () => {
   createBoard(userGrid, userSquares)
   createBoard(computerGrid, computerSquares)
 
+  const difficultySelect = document.getElementById('difficulty');
+  let level = 'easy';
+  // Add event listener for when the selected value changes
+  difficultySelect.addEventListener('change', function() {
+    const selectedValue = difficultySelect.value;
+    console.log('Selected difficulty:', selectedValue);
+    level = selectedValue;
+      // Disable the select element after selection
+  difficultySelect.disabled = true;
+    
+  });
+
+
+
   // Select Player Mode
   if (gameMode === 'singlePlayer') {
     startSinglePlayer()
@@ -172,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generate(shipArray[4])
 
     startButton.addEventListener('click', () => {
-     
+      difficultySelect.disabled = true;
       playGameSingle()
     })
   }
@@ -196,9 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let randomStart = Math.abs(Math.floor(Math.random() * computerSquares.length - (ship.directions[0].length * direction)))
 
     const isTaken = current.some(index => computerSquares[randomStart + index].classList.contains('taken'))
-    const isAtRightEdge = current.some(index => (randomStart + index) % width === width - 1 && direction === 1)
-    const isAtLeftEdge = current.some(index => (randomStart + index) % width === 0 && direction === 1)
-    
+    const isAtRightEdge = current.some(index => (randomStart + index) % width === width - 1)
+    const isAtLeftEdge = current.some(index => (randomStart + index) % width === 0)
 
     if (!isTaken && !isAtRightEdge && !isAtLeftEdge) current.forEach(index => computerSquares[randomStart + index].classList.add('taken', ship.name))
 
@@ -283,15 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedShipIndex = parseInt(selectedShipNameWithIndex.substr(-1))
 
     shipLastId = shipLastId - selectedShipIndex
-      // Check if any square in the path of the ship is "taken"
-  const isOverlap = [...Array(draggedShipLength).keys()].some(i => {
-    let squareIndex = isHorizontal 
-      ? parseInt(this.dataset.id) - selectedShipIndex + i 
-      : parseInt(this.dataset.id) - selectedShipIndex + width * i;
-    return userSquares[squareIndex].classList.contains('taken');
-  });
-
-  if (isOverlap) return; 
     // console.log(shipLastId)
 
     if (isHorizontal && !newNotAllowedHorizontal.includes(shipLastId)) {
@@ -346,30 +350,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Game Logic for Single Player
-
   function playGameSingle() {
     if (isGameOver) return;
-    
-    // Check if ships are placed
-    if (!allShipsPlaced) {
-      turnDisplay.innerHTML = 'Place all your ships first!';
-      return; // Exit the function if ships are not placed
-    }
-  
-    setupButtons.style.display = 'none';
-    
+      // Check if ships are placed
+  if (!allShipsPlaced) {
+    turnDisplay.innerHTML = 'Place all your ships first!';
+    return; // Exit the function if ships are not placed
+  }
+   setupButtons.style.display = 'none'
     if (currentPlayer === 'user') {
-      turnDisplay.innerHTML = 'Your Go';
+      turnDisplay.innerHTML = 'Your Go'
       computerSquares.forEach(square => square.addEventListener('click', function(e) {
-        shotFired = square.dataset.id;
-        revealSquare(square.classList);
-        checkForWins();
-      }));
+        shotFired = square.dataset.id
+        revealSquare(square.classList)
+        
+      }))
     }
-  
     if (currentPlayer === 'enemy') {
-      turnDisplay.innerHTML = 'Computer\'s Go';
-      setTimeout(enemyGo, 1000);
+      turnDisplay.innerHTML = 'Computers Go'
+      setTimeout(enemyGo, 1000)
     }
   }
 
@@ -391,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (obj.includes('taken')) {
       enemySquare.classList.add('boom')
+
     } else {
       enemySquare.classList.add('miss')
     }
@@ -406,100 +406,284 @@ document.addEventListener('DOMContentLoaded', () => {
   let cpuCarrierCount = 0
 
 
-  function enemyGo(square) {
-    if (gameMode === 'singlePlayer') square = Math.floor(Math.random() * userSquares.length)
+  let lastHit = null; // Keep track of the last successful hit
+  let consecutiveAttempts = 0;
+  const maxNearbyAttempts = 4;
+    
+    
+  function enemyGo() {
+    let square;
+    
+    // Choose the square based on difficulty
+    if (gameMode === 'singlePlayer') {
+      if (level === 'easy') {
+        square = Math.floor(Math.random() * userSquares.length);
+      } else if (level === 'medium') {
+        square = mediumAIMove(userSquares);
+        // square = square.getAttribute('data-id');
+      } else if (level === 'hard') {
+        square = hardAIMove(userSquares); // Assuming shipSizes is available
+      }
+    }
+    
+  
+    // Check if the square has not been shot at before
     if (!userSquares[square].classList.contains('boom')) {
-      const hit = userSquares[square].classList.contains('taken')
-      userSquares[square].classList.add(hit ? 'boom' : 'miss')
-      if (userSquares[square].classList.contains('destroyer')) cpuDestroyerCount++
-      if (userSquares[square].classList.contains('submarine')) cpuSubmarineCount++
-      if (userSquares[square].classList.contains('cruiser')) cpuCruiserCount++
-      if (userSquares[square].classList.contains('battleship')) cpuBattleshipCount++
-      if (userSquares[square].classList.contains('carrier')) cpuCarrierCount++
-      checkForWins()
-    } else if (gameMode === 'singlePlayer') enemyGo()
-    currentPlayer = 'user'
-    turnDisplay.innerHTML = 'Your Go'
+      const hit = userSquares[square].classList.contains('taken');
+      userSquares[square].classList.add(hit ? 'boom' : 'miss');
+  
+      // Count destroyed ships
+      if (userSquares[square].classList.contains('destroyer')) cpuDestroyerCount++;
+      if (userSquares[square].classList.contains('submarine')) cpuSubmarineCount++;
+      if (userSquares[square].classList.contains('cruiser')) cpuCruiserCount++;
+      if (userSquares[square].classList.contains('battleship')) cpuBattleshipCount++;
+      if (userSquares[square].classList.contains('carrier')) cpuCarrierCount++;
+  
+          // If it was a hit, store the square and reset direction checks
+    if (hit) {
+      lastHit = square;
+      consecutiveAttempts = 0;  // Reset consecutive attempts after a hit
+      attemptedDirections = []; // Reset attempted directions for the next turn
+    } else if (lastHit !== null) {
+      // Don't reset `lastHit` yet if there are more directions to try
+    } else {
+      // lastHit = null; // Reset only when no directions or lastHit is available
+      if (level === "medium"){
+        lastHit = null;
+      }
+      consecutiveAttempts = 0;
+    }
+  
+      checkForWins();
+    } else if (gameMode === 'singlePlayer') {
+      enemyGo(); // Retry if square has been hit
+    }
+    
+    currentPlayer = 'user';
+    turnDisplay.innerHTML = 'Your Go';
+  }
+  let attemptedDirectionsMedium = []; // Track attempted directions
+
+  // Medium AI Move Logic
+  function mediumAIMove(playerGrid) {
+    if (lastHit) {
+      let adjacentSquares = getAdjacentSquares(lastHit, playerGrid);
+  
+      console.log('Before filtering:', adjacentSquares);
+  
+      // Filter out squares that have already been hit (class 'boom') or missed (class 'miss')
+      adjacentSquares = adjacentSquares.filter(square => {
+        const squareElement = playerGrid[square]; 
+        console.log(squareElement)
+        // Get the corresponding element in the playerGrid
+        return !(squareElement?.classList.contains('boom') || squareElement?.classList.contains('miss'));
+      });
+  
+      console.log('After filtering:', adjacentSquares);
+  
+      // If there are valid adjacent squares, pick the first one
+      if (adjacentSquares.length > 0) {
+        let chosenSquare = adjacentSquares[0]; // Select the first available adjacent square
+        lastHit = chosenSquare; // Update lastHit to the new valid adjacent square
+        console.log('Selecting adjacent square:', chosenSquare);
+        return chosenSquare;
+      }
+      
+      // If all directions have been tried, reset `lastHit` and start fresh
+      lastHit = null;
+      attemptedDirectionsMedium = []; // Reset attempted directions after all are tried
+    }
+  
+    // If no last hit or no valid adjacent squares, fallback to random selection
+    let availableSquares = playerGrid.filter(square => !square?.classList.contains('boom'));
+    let randomSquare = availableSquares[Math.floor(Math.random() * availableSquares.length)];
+  
+    console.log('Random square:', randomSquare.getAttribute('data-id')); // Log the random square selection
+    return randomSquare.getAttribute('data-id'); // Return the actual square ID
+  }
+  
+  // Get adjacent squares (up, down, left, right)
+  function getAdjacentSquares(hitSquare, grid) {
+    const adjacentSquares = [];
+    const rowSize = Math.sqrt(grid.length); // Assuming square grid (e.g., 10x10)
+  
+    const up = hitSquare - rowSize;
+    const down = hitSquare + rowSize;
+    const left = hitSquare - 1;
+    const right = hitSquare + 1;
+  
+    // Check if the squares are within grid bounds and not in invalid columns
+    if (up >= 0) adjacentSquares.push(up);
+    if (down < grid.length) adjacentSquares.push(down);
+    if (hitSquare % rowSize !== 0) adjacentSquares.push(left); // Not in the first column
+    if ((hitSquare + 1) % rowSize !== 0) adjacentSquares.push(right); // Not in the last column
+  
+    return adjacentSquares;
+  }
+  
+
+let attemptedDirections = []; // Track directions that have already been attempted for a hit
+
+function hardAIMove(playerGrid) {
+  console.log('=== AI Move Start ===');
+  console.log('Last Hit:', lastHit);
+  console.log('Consecutive Attempts:', consecutiveAttempts);
+
+  // If we have a previous hit and haven't exhausted nearby attempts
+  if (lastHit !== null && consecutiveAttempts < maxNearbyAttempts) {
+    let squareIndex = findNextAdjacentSquare(playerGrid, lastHit); // Get the next adjacent square to target
+    console.log('Next Adjacent Square:', squareIndex);
+
+    if (squareIndex !== -1) {
+      lastHit = squareIndex; // Update last hit
+      consecutiveAttempts++; // Increment consecutive attempts count
+      console.log('Hitting adjacent square:', squareIndex);
+      return squareIndex; // Return the next square index to hit
+    } else {
+      console.log('No valid adjacent square found. Continuing to check other directions.');
+    }
   }
 
-  function checkForWins() {
-    let enemy = 'computer';
-    if (gameMode === 'multiPlayer') enemy = 'enemy';
-  
-    // Log current counts before checking
-    console.log('Player Ship Counts: ', { destroyerCount, submarineCount, cruiserCount, battleshipCount, carrierCount });
-    console.log('Enemy Ship Counts: ', { cpuDestroyerCount, cpuSubmarineCount, cpuCruiserCount, cpuBattleshipCount, cpuCarrierCount });
-  
-    // Player ship conditions
-    if (destroyerCount === 2) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s destroyer`;
-      destroyerCount = 10; // Mark the ship as fully sunk
-    }
-    if (submarineCount === 3) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s submarine`;
-      submarineCount = 10;
-    }
-    if (cruiserCount === 3) { // Fixed missing condition for cruiser
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s cruiser`;
-      cruiserCount = 10;
-    }
-    if (battleshipCount === 4) {
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s battleship`;
-      battleshipCount = 10;
-    }
-    if (carrierCount === 5) { // Fixed missing condition for carrier
-      infoDisplay.innerHTML = `You sunk the ${enemy}'s carrier`;
-      carrierCount = 10;
-    }
-  
-    // Enemy ship conditions (the enemy sinking the player's ships)
-    if (cpuDestroyerCount === 2) {
-      infoDisplay.innerHTML = `${enemy} sunk your destroyer`;
-      cpuDestroyerCount = 10; // Mark the ship as fully sunk
-    }
-    if (cpuSubmarineCount === 3) {
-      infoDisplay.innerHTML = `${enemy} sunk your submarine`;
-      cpuSubmarineCount = 10;
-    }
-    if (cpuCruiserCount === 3) { // Fixed missing condition for enemy cruiser
-      infoDisplay.innerHTML = `${enemy} sunk your cruiser`;
-      cpuCruiserCount = 10;
-    }
-    if (cpuBattleshipCount === 4) {
-      infoDisplay.innerHTML = `${enemy} sunk your battleship`;
-      cpuBattleshipCount = 10;
-    }
-    if (cpuCarrierCount === 5) { // Fixed missing condition for enemy carrier
-      infoDisplay.innerHTML = `${enemy} sunk your carrier`;
-      cpuCarrierCount = 10;
-    }
-  
-    // Log after checking ship sink conditions
-    console.log('Updated Player Ship Counts: ', { destroyerCount, submarineCount, cruiserCount, battleshipCount, carrierCount });
-    console.log('Updated Enemy Ship Counts: ', { cpuDestroyerCount, cpuSubmarineCount, cpuCruiserCount, cpuBattleshipCount, cpuCarrierCount });
-  
-    // Check for winning condition - Player wins if the total ship score equals 50
-    if ((destroyerCount + submarineCount + cruiserCount + battleshipCount + carrierCount) === 50) {
-      infoDisplay.innerHTML = "YOU WIN";
-      gameOver();
-    }
-  
-    // Check for losing condition - Enemy wins if the total ship score equals 50
-    if ((cpuDestroyerCount + cpuSubmarineCount + cpuCruiserCount + cpuBattleshipCount + cpuCarrierCount) === 50) {
-      infoDisplay.innerHTML = `${enemy.toUpperCase()} WINS`;
-      gameOver();
+  // Only reset if all adjacent squares have been attempted
+  if (attemptedDirections.length === 0 && consecutiveAttempts >= maxNearbyAttempts) {
+    consecutiveAttempts = 0; // Reset consecutive attempts
+    lastHit = null; // Reset last hit as we're switching strategies
+    attemptedDirections = []; // Reset attempted directions
+    console.log('Switching to random move');
+  }
+
+  // Fallback to random if no nearby valid squares are found
+  let availableSquares = playerGrid
+    .map((square, index) => ({ square, index })) // Create array of squares with their indexes
+    .filter(({ square }) => !square.classList.contains('boom')); // Filter only squares that aren't hit
+
+  if (availableSquares.length === 0) {
+    console.log('No available squares left');
+    return null; // No available squares left
+  }
+
+  let randomIndex = Math.floor(Math.random() * availableSquares.length);
+  lastHit = availableSquares[randomIndex].index; // Update last hit with random choice
+  console.log('Hitting random square:', availableSquares[randomIndex].index);
+  return availableSquares[randomIndex].index; // Return the index of the randomly chosen square
+}
+
+// Specialized function to find the next adjacent square to hit around a given hit square
+function findNextAdjacentSquare(grid, hitSquare) {
+  const directions = ['up', 'down', 'left', 'right'];
+  const rowSize = Math.sqrt(grid.length); // Assuming a square grid
+
+  console.log('Attempted Directions (before):', attemptedDirections);
+
+  // If directions haven't been initialized for this hit, start fresh
+  if (attemptedDirections.length === 0) {
+    attemptedDirections = directions.slice(); // Copy all directions
+  }
+
+  // Try each direction that hasn't been attempted yet
+  while (attemptedDirections.length > 0) {
+    let direction = attemptedDirections.shift(); // Take the next unattempted direction
+    let adjacentSquare = getDirectionalSquare(hitSquare, grid, direction, rowSize); // Get square in the specified direction
+
+    console.log('Trying direction:', direction, '-> Adjacent Square:', adjacentSquare);
+
+    // If a valid adjacent square is found that hasn't been hit, return it
+    if (adjacentSquare !== -1 && !grid[adjacentSquare].classList.contains('boom')) {
+      console.log('Found valid adjacent square in direction:', direction);
+      return adjacentSquare;
     }
   }
-  
+
+  console.log('All directions attempted, no valid adjacent squares found');
+  // If no valid adjacent squares found, return -1 (fall back to random move)
+  return -1;
+}
+
+// Helper function to get a square in a specific direction (up, down, left, right) around the current hit
+function getDirectionalSquare(hitSquare, grid, direction, rowSize) {
+  let adjacentSquare = -1;
+
+  // Check the direction and calculate the corresponding square index
+  switch (direction) {
+    case 'up':
+      adjacentSquare = hitSquare - rowSize; // Move up by row size
+      if (adjacentSquare < 0) adjacentSquare = -1; // Out of grid (top)
+      break;
+    case 'down':
+      adjacentSquare = hitSquare + rowSize; // Move down by row size
+      if (adjacentSquare >= grid.length) adjacentSquare = -1; // Out of grid (bottom)
+      break;
+    case 'left':
+      adjacentSquare = hitSquare % rowSize !== 0 ? hitSquare - 1 : -1; // Move left, but not from first column
+      break;
+    case 'right':
+      adjacentSquare = (hitSquare + 1) % rowSize !== 0 ? hitSquare + 1 : -1; // Move right, but not from last column
+      break;
+  }
+
+  // Return -1 if the adjacent square is out of grid bounds
+  if (adjacentSquare < 0 || adjacentSquare >= grid.length) return -1;
+
+  return adjacentSquare; // Return valid adjacent square index
+}
+
+
+  function checkForWins() {
+    let enemy = 'computer'
+    if(gameMode === 'multiPlayer') enemy = 'enemy'
+    if (destroyerCount === 2) {
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s destroyer`
+      destroyerCount = 10
+    }
+    if (submarineCount === 3) {
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s submarine`
+      submarineCount = 10
+    }
+    if (cruiserCount === 3) {
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s cruiser`
+      cruiserCount = 10
+    }
+    if (battleshipCount === 4) {
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s battleship`
+      battleshipCount = 10
+    }
+    if (carrierCount === 5) {
+      infoDisplay.innerHTML = `You sunk the ${enemy}'s carrier`
+      carrierCount = 10
+    }
+    if (cpuDestroyerCount === 2) {
+      infoDisplay.innerHTML = `${enemy} sunk your destroyer`
+      cpuDestroyerCount = 10
+    }
+    if (cpuSubmarineCount === 3) {
+      infoDisplay.innerHTML = `${enemy} sunk your submarine`
+      cpuSubmarineCount = 10
+    }
+    if (cpuCruiserCount === 3) {
+      infoDisplay.innerHTML = `${enemy} sunk your cruiser`
+      cpuCruiserCount = 10
+    }
+    if (cpuBattleshipCount === 4) {
+      infoDisplay.innerHTML = `${enemy} sunk your battleship`
+      cpuBattleshipCount = 10
+    }
+    if (cpuCarrierCount === 5) {
+      infoDisplay.innerHTML = `${enemy} sunk your carrier`
+      cpuCarrierCount = 10
+    }
+
+    if ((destroyerCount + submarineCount + cruiserCount + battleshipCount + carrierCount) === 50) {
+      infoDisplay.innerHTML = "YOU WIN"
+      gameOver()
+    }
+    if ((cpuDestroyerCount + cpuSubmarineCount + cpuCruiserCount + cpuBattleshipCount + cpuCarrierCount) === 50) {
+      infoDisplay.innerHTML = `${enemy.toUpperCase()} WINS`
+      gameOver()
+    }
+  }
 
   function gameOver() {
     isGameOver = true
     startButton.removeEventListener('click', playGameSingle)
   }
-  computerSquares.forEach(square => {
-    square.replaceWith(square.cloneNode(true)); // Clone to remove all event listeners
-  });
-
-  // Optionally, show a game-over message to the player
-  console.log("Game over! No more moves allowed.");
 })
